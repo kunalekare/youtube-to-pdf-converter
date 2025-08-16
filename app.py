@@ -1,4 +1,4 @@
-# --- Start of app.py (Final Optimized Version for Deployment) ---
+# --- Start of app.py (Final Version with Anti-Blocking Tweak) ---
 from flask import Flask, render_template, request, send_file, jsonify, after_this_request
 import yt_dlp
 import cv2
@@ -38,6 +38,11 @@ def download_video(youtube_url, output_dir, job_id):
         'outtmpl': os.path.join(output_dir, 'video.%(ext)s'),
         'format': 'bestvideo[height<=720][ext=mp4]/best[height<=720][ext=mp4]',
         'progress_hooks': [progress_hook],
+        # --- FIX: Add a browser-like User-Agent to avoid bot detection ---
+        'http_headers': {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+            'Accept-Language': 'en-US,en;q=0.9',
+        },
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         try:
