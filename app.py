@@ -38,11 +38,18 @@ def download_video(youtube_url, output_dir, job_id):
         'outtmpl': os.path.join(output_dir, 'video.%(ext)s'),
         'format': 'bestvideo[height<=720][ext=mp4]/best[height<=720][ext=mp4]',
         'progress_hooks': [progress_hook],
-        # --- FIX: Add a browser-like User-Agent to avoid bot detection ---
+        # --- FINAL FIX: Add extensive browser-like headers and force IPv4 ---
         'http_headers': {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
             'Accept-Language': 'en-US,en;q=0.9',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'none',
+            'Sec-Fetch-User': '?1',
+            'Upgrade-Insecure-Requests': '1',
         },
+        'force_ipv4': True,
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         try:
@@ -51,6 +58,8 @@ def download_video(youtube_url, output_dir, job_id):
             title = info.get('title', 'video_slides')
             return filename, title
         except Exception as e:
+            if "confirm you're not a bot" in str(e):
+                print(f"[{job_id}] CRITICAL: YouTube bot detection triggered. This is a platform issue, not a code bug.")
             print(f"Error downloading video: {e}")
             return None, None
 
