@@ -1,4 +1,4 @@
-# --- Start of app.py (Optimized for Server Deployment) ---
+# --- Start of app.py (Final Optimized Version for Deployment) ---
 from flask import Flask, render_template, request, send_file, jsonify, after_this_request
 import yt_dlp
 import cv2
@@ -24,16 +24,15 @@ def download_video(youtube_url, output_dir, job_id):
     """Downloads video and updates progress using a hook."""
     def progress_hook(d):
         with jobs_lock:
-            if d['status'] == 'downloading':
-                if job_id in jobs:
-                    percent_str = d.get('_percent_str', '0%').replace('%','').strip()
-                    try:
-                        percent = float(percent_str)
-                        # Scale download progress to be the first 50% of the total progress
-                        jobs[job_id]['progress'] = percent / 2
-                        jobs[job_id]['stage'] = 'Downloading Video'
-                    except (ValueError, TypeError):
-                        pass # Ignore if percentage is not a number
+            if d['status'] == 'downloading' and job_id in jobs:
+                percent_str = d.get('_percent_str', '0%').replace('%','').strip()
+                try:
+                    percent = float(percent_str)
+                    # Download progress is the first 50% of the total progress
+                    jobs[job_id]['progress'] = percent / 2
+                    jobs[job_id]['stage'] = 'Downloading Video'
+                except (ValueError, TypeError):
+                    pass # Ignore if percentage is not a number
 
     ydl_opts = {
         'outtmpl': os.path.join(output_dir, 'video.%(ext)s'),
@@ -59,10 +58,8 @@ def frames_to_pdf_generator(video_path, job_id, sampling_rate_fps=1, scene_chang
         print("Error: Could not open video.")
         return
 
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    if fps == 0: fps = 30
-    frame_interval = int(fps / sampling_rate_fps)
-    if frame_interval == 0: frame_interval = 1
+    fps = cap.get(cv2.CAP_PROP_FPS) or 30
+    frame_interval = int(fps / sampling_rate_fps) or 1
 
     last_good_frame = None
     prev_hist = None
@@ -79,6 +76,7 @@ def frames_to_pdf_generator(video_path, job_id, sampling_rate_fps=1, scene_chang
         with jobs_lock:
             if job_id in jobs:
                 analysis_progress = (frame_count / total_frames) * 100 if total_frames > 0 else 0
+                # Analysis progress is the second 50% of the total progress
                 jobs[job_id]['progress'] = 50 + (analysis_progress / 2)
                 jobs[job_id]['stage'] = 'Analyzing Video for Slides'
 
@@ -110,7 +108,6 @@ def save_frames_to_pdf(frame_generator, output_pdf):
     processed_frames = 0
     
     for frame in frame_generator:
-        # Use a secure temporary file that is automatically handled
         with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as temp_f:
             temp_img_path = temp_f.name
         
@@ -130,7 +127,6 @@ def save_frames_to_pdf(frame_generator, output_pdf):
             pdf.image(temp_img_path, x=margin, y=margin, w=display_w, h=display_h)
             processed_frames += 1
         finally:
-            # Ensure the temporary file is always deleted
             if os.path.exists(temp_img_path):
                 os.remove(temp_img_path)
 
@@ -143,8 +139,6 @@ def save_frames_to_pdf(frame_generator, output_pdf):
 
 def create_pdf_task(youtube_url, job_id):
     """This function runs in the background thread."""
-    # Use /dev/shm for in-memory temp files on Linux systems like Render
-    # Fallback to default temp dir if it doesn't exist (for local Windows dev)
     temp_base = '/dev/shm' if os.path.exists('/dev/shm') else tempfile.gettempdir()
     temp_dir = tempfile.mkdtemp(dir=temp_base)
     
@@ -160,6 +154,7 @@ def create_pdf_task(youtube_url, job_id):
         
         safe_filename = re.sub(r'[^\w\s-]', '', video_title).strip()
         safe_filename = re.sub(r'[-\s]+', '-', safe_filename) + ".pdf"
+        if not safe_filename: safe_filename = "video-slides.pdf"
 
         output_pdf = os.path.join(temp_dir, "output.pdf")
         
