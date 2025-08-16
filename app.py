@@ -38,18 +38,11 @@ def download_video(youtube_url, output_dir, job_id):
         'outtmpl': os.path.join(output_dir, 'video.%(ext)s'),
         'format': 'bestvideo[height<=720][ext=mp4]/best[height<=720][ext=mp4]',
         'progress_hooks': [progress_hook],
-        # --- FINAL FIX: Add extensive browser-like headers and force IPv4 ---
+        # --- FINAL ATTEMPT: Simplify headers and specify source address ---
         'http_headers': {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-            'Accept-Language': 'en-US,en;q=0.9',
-            'Sec-Fetch-Dest': 'document',
-            'Sec-Fetch-Mode': 'navigate',
-            'Sec-Fetch-Site': 'none',
-            'Sec-Fetch-User': '?1',
-            'Upgrade-Insecure-Requests': '1',
         },
-        'force_ipv4': True,
+        'source_address': '0.0.0.0', # Use system default outgoing IP
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         try:
