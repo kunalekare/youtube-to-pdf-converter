@@ -1,4 +1,4 @@
-# --- Start of app.py (Optimized with Accurate Progress Tracking) ---
+# --- Start of app.py (Optimized for Server Deployment) ---
 from flask import Flask, render_template, request, send_file, jsonify, after_this_request
 import yt_dlp
 import cv2
@@ -76,10 +76,8 @@ def frames_to_pdf_generator(video_path, job_id, sampling_rate_fps=1, scene_chang
         if not ret:
             break
 
-        # --- Progress Update for Analysis Phase ---
         with jobs_lock:
             if job_id in jobs:
-                # Analysis progress is the second 50% of the total progress
                 analysis_progress = (frame_count / total_frames) * 100 if total_frames > 0 else 0
                 jobs[job_id]['progress'] = 50 + (analysis_progress / 2)
                 jobs[job_id]['stage'] = 'Analyzing Video for Slides'
@@ -105,14 +103,17 @@ def frames_to_pdf_generator(video_path, job_id, sampling_rate_fps=1, scene_chang
     cap.release()
 
 def save_frames_to_pdf(frame_generator, output_pdf):
-    """Robust PDF creation that saves each frame to a temporary file."""
+    """Robust PDF creation using secure temporary files."""
     pdf = FPDF('P', 'mm', 'A4')
     pdf_w = 210
     margin = 10
     processed_frames = 0
     
     for frame in frame_generator:
-        temp_img_path = tempfile.mktemp(suffix=".jpg")
+        # Use a secure temporary file that is automatically handled
+        with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as temp_f:
+            temp_img_path = temp_f.name
+        
         try:
             is_success = cv2.imwrite(temp_img_path, frame)
             if not is_success:
@@ -129,6 +130,7 @@ def save_frames_to_pdf(frame_generator, output_pdf):
             pdf.image(temp_img_path, x=margin, y=margin, w=display_w, h=display_h)
             processed_frames += 1
         finally:
+            # Ensure the temporary file is always deleted
             if os.path.exists(temp_img_path):
                 os.remove(temp_img_path)
 
@@ -141,7 +143,10 @@ def save_frames_to_pdf(frame_generator, output_pdf):
 
 def create_pdf_task(youtube_url, job_id):
     """This function runs in the background thread."""
-    temp_dir = tempfile.mkdtemp()
+    # Use /dev/shm for in-memory temp files on Linux systems like Render
+    # Fallback to default temp dir if it doesn't exist (for local Windows dev)
+    temp_base = '/dev/shm' if os.path.exists('/dev/shm') else tempfile.gettempdir()
+    temp_dir = tempfile.mkdtemp(dir=temp_base)
     
     with jobs_lock:
         jobs[job_id]['status'] = 'processing'
@@ -153,11 +158,10 @@ def create_pdf_task(youtube_url, job_id):
             
         frame_gen = frames_to_pdf_generator(video_path, job_id, sampling_rate_fps=1)
         
-        # Sanitize the video title to create a safe filename
         safe_filename = re.sub(r'[^\w\s-]', '', video_title).strip()
         safe_filename = re.sub(r'[-\s]+', '-', safe_filename) + ".pdf"
 
-        output_pdf = os.path.join(temp_dir, "output.pdf") # Use a generic name in temp
+        output_pdf = os.path.join(temp_dir, "output.pdf")
         
         success = save_frames_to_pdf(frame_gen, output_pdf)
         if not success:
@@ -168,7 +172,7 @@ def create_pdf_task(youtube_url, job_id):
                 jobs[job_id]['status'] = 'complete'
                 jobs[job_id]['filepath'] = output_pdf
                 jobs[job_id]['temp_dir'] = temp_dir
-                jobs[job_id]['filename'] = safe_filename # Store the clean filename
+                jobs[job_id]['filename'] = safe_filename
         print(f"[{job_id}] Job complete.")
 
     except Exception as e:
@@ -201,7 +205,7 @@ def convert():
 @app.route("/status/<job_id>")
 def status(job_id):
     with jobs_lock:
-        job = jobs.get(job_id, {}) # Use .get for safety
+        job = jobs.get(job_id, {})
     if not job:
         return jsonify({'status': 'not_found'}), 404
     return jsonify({
