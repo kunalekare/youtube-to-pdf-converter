@@ -3,6 +3,9 @@
 Convert YouTube videos into text transcripts and export them as **PDF documents**.  
 This tool uses [Preview`]( https://youtube-to-pdf-converter.onrender.com/) for video extraction and text parsing, then formats the results into a downloadable PDF.  
 
+* for now the functionality as be postponed beacause some cookies issue,
+## but You can run on you run you local machine it works fine 100%
+
 ---
 
 ## 🚀 Features
