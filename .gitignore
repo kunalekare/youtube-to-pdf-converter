@@ -1,0 +1,15 @@
+# Python virtual environment
+.venv/
+venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Local dependencies (like your ffmpeg folder)
+ffmpeg-*/
+
+# IDE and OS files
+.vscode/
+.idea/
+*.DS_Store

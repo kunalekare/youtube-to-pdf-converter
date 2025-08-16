@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Slide Extractor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --background-color: #121212;
+            --surface-color: #1e1e1e;
+            --primary-color: #bb86fc;
+            --primary-variant-color: #3700b3;
+            --secondary-color: #03dac6;
+            --text-color: #ffffff;
+            --text-secondary-color: #b3b3b3;
+            --error-color: #cf6679;
+            --success-color: #4CAF50;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .main-container {
+            background-color: var(--surface-color);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        header {
+            margin-bottom: 30px;
+        }
+
+        .logo {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            letter-spacing: 1px;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary-color);
+            margin-top: 5px;
+        }
+
+        #convert-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .input-group {
+            position: relative;
+        }
+
+        #youtube_url {
+            width: 100%;
+            padding: 15px 20px 15px 50px;
+            background-color: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: var(--text-color);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        #youtube_url:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 15px rgba(187, 134, 252, 0.2);
+        }
+
+        .input-icon {
+            position: absolute;
+            top: 50%;
+            left: 15px;
+            transform: translateY(-50%);
+            color: var(--text-secondary-color);
+        }
+
+        #submit-button {
+            background: linear-gradient(90deg, var(--primary-variant-color), var(--primary-color));
+            color: white;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 1.1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        #submit-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(187, 134, 252, 0.3);
+        }
+
+        #submit-button:disabled {
+            background: #444;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        #status-area {
+            margin-top: 30px;
+            font-size: 1rem;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #status-message {
+            color: var(--text-secondary-color);
+            margin-bottom: 15px;
+        }
+        
+        #status-message.error {
+            color: var(--error-color);
+        }
+
+        .hidden {
+            display: none;
+        }
+        
+        .progress-bar-container {
+            width: 100%;
+            height: 10px;
+            background-color: rgba(0,0,0,0.3);
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .progress-bar {
+            width: 0%;
+            height: 100%;
+            background-color: var(--primary-color);
+            transition: width 0.5s ease-in-out;
+        }
+
+        #download-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background-color: var(--success-color);
+            color: white;
+            padding: 12px 25px;
+            border-radius: 10px;
+            text-decoration: none;
+            margin-top: 15px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        #download-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(76, 175, 80, 0.3);
+        }
+        
+        footer {
+            margin-top: 40px;
+            color: var(--text-secondary-color);
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+    <main class="main-container">
+        <header>
+            <div class="logo">Kunal ekare</div>
+            <p class="subtitle">Convert YouTube Lectures into PDF Slides</p>
+        </header>
+
+        <form id="convert-form">
+            <div class="input-group">
+                <span class="input-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.72"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.72-1.72"></path></svg>
+                </span>
+                <input type="url" id="youtube_url" name="youtube_url" placeholder="Paste YouTube video link here" required>
+            </div>
+            <button type="submit" id="submit-button">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>
+                <span>Extract Slides</span>
+            </button>
+        </form>
+
+        <div id="status-area" class="hidden">
+            <p id="status-message">Starting process...</p>
+            <div id="progress-container" class="progress-bar-container hidden">
+                <div id="progress-bar" class="progress-bar"></div>
+            </div>
+            <a href="#" id="download-link" class="hidden">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                <span>Download PDF</span>
+            </a>
+        </div>
+    </main>
+    
+    <footer>
+        <p>Copyright © 2025 Kunal ekare</p>
+    </footer>
+
+<script>
+    const form = document.getElementById('convert-form');
+    const urlInput = document.getElementById('youtube_url');
+    const submitButton = document.getElementById('submit-button');
+    const statusArea = document.getElementById('status-area');
+    const statusMessage = document.getElementById('status-message');
+    const downloadLink = document.getElementById('download-link');
+    const progressContainer = document.getElementById('progress-container');
+    const progressBar = document.getElementById('progress-bar');
+    
+    let intervalId;
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        submitButton.disabled = true;
+        submitButton.querySelector('span').innerText = 'Processing...';
+        statusArea.classList.remove('hidden');
+        progressContainer.classList.add('hidden'); // Hide progress bar initially
+        progressBar.style.width = '0%';
+        downloadLink.classList.add('hidden');
+        statusMessage.classList.remove('error');
+        statusMessage.innerText = 'Submitting your request...';
+
+        try {
+            const response = await fetch('/convert', {
+                method: 'POST',
+                body: new FormData(form)
+            });
+            const data = await response.json();
+            
+            if (data.job_id) {
+                // Start polling for the job status
+                intervalId = setInterval(() => checkJobStatus(data.job_id), 2000); // Check every 2 seconds
+            } else {
+                throw new Error('Failed to start job.');
+            }
+        } catch (error) {
+            resetUI('An error occurred. Please try again.');
+        }
+    });
+
+    async function checkJobStatus(jobId) {
+        try {
+            const response = await fetch(`/status/${jobId}`);
+            const data = await response.json();
+
+            if (data.status === 'processing') {
+                statusMessage.innerText = `${data.stage || 'Processing'}...`;
+                progressContainer.classList.remove('hidden');
+                progressBar.style.width = `${data.progress || 0}%`;
+            } else if (data.status === 'complete') {
+                clearInterval(intervalId);
+                statusMessage.innerText = 'Your PDF is ready!';
+                progressContainer.classList.add('hidden');
+                downloadLink.href = `/download/${jobId}`;
+                // Update download link text with the filename
+                const downloadSpan = downloadLink.querySelector('span');
+                downloadSpan.innerText = data.filename ? `Download "${data.filename}"` : 'Download PDF';
+                downloadLink.classList.remove('hidden');
+                submitButton.disabled = false;
+                submitButton.querySelector('span').innerText = 'Extract Another';
+            } else if (data.status === 'failed') {
+                clearInterval(intervalId);
+                resetUI('The job failed. Please check the video URL and try again.');
+            }
+        } catch (error) {
+            clearInterval(intervalId);
+            resetUI('Could not get job status. Please try again.');
+        }
+    }
+
+    function resetUI(message) {
+        progressContainer.classList.add('hidden');
+        statusMessage.innerText = message;
+        statusMessage.classList.add('error');
+        submitButton.disabled = false;
+        submitButton.querySelector('span').innerText = 'Extract Slides';
+    }
+</script>
+</body>
+</html>
